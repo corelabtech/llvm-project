@@ -348,6 +348,10 @@ Changes to the RISC-V Backend
   extension.
 * Adds experimental assembler support for the Qualcomm uC 'Xqcilo` (Large Offset Load Store)
   extension.
+* Adds assembler support for the 'Zilsd` (Load/Store Pair Instructions)
+  extension.
+* Adds assembler support for the 'Zclsd` (Compressed Load/Store Pair Instructions)
+  extension.
 * Added ``Sdext`` and ``Sdtrig`` extensions.
 
 Changes to the WebAssembly Backend
