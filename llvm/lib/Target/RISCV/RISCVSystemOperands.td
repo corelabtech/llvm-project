@@ -464,9 +464,22 @@ def : SysReg<"vsctrctl", 0x24e>;
 def : SysReg<"mctrctl", 0x34e>;
 
 //===-----------------------------------------------
-// CoreLab custom CSRs
+// Cycle and Instret Privilege Mode Filtering (Smcntrpmf)
+//===-----------------------------------------------
+def : SysReg<"mcyclecfg", 0x321>;
+def : SysReg<"minstretcfg", 0x322>;
+let isRV32Only = 1 in {
+def : SysReg<"mcyclecfgh", 0x721>;
+def : SysReg<"minstretcfgh", 0x722>;
+} // isRV32Only
+
+//===-----------------------------------------------
+// Vendor CSRs
 //===-----------------------------------------------
 
+//===-----------------------------------------------
+// CoreLab custom CSRs
+//===-----------------------------------------------
 def : SysReg<"mtvt", 0x307>;
 def : SysReg<"mnxti", 0x345>;
 def : SysReg<"mintthresh", 0x347>;
