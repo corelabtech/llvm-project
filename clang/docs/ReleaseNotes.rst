@@ -1256,6 +1256,8 @@ RISC-V Support
 
 - The option ``-mcmodel=large`` for the large code model is supported.
 - Bump RVV intrinsic to version 1.0, the spec: https://github.com/riscv-non-isa/rvv-intrinsic-doc/releases/tag/v1.0.0-rc4
+- Add support for `__attribute__((interrupt("rnmi")))` to be used with the `Smrnmi` extension.
+  With this the `Smrnmi` extension is fully supported.
 
 CUDA/HIP Language Changes
 ^^^^^^^^^^^^^^^^^^^^^^^^^

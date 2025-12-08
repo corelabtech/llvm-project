@@ -66,6 +66,8 @@ def riscv_sret_glue : SDNode<"RISCVISD::SRET_GLUE", SDTNone,
                              [SDNPHasChain, SDNPOptInGlue]>;
 def riscv_mret_glue : SDNode<"RISCVISD::MRET_GLUE", SDTNone,
                              [SDNPHasChain, SDNPOptInGlue]>;
+def riscv_mnret_glue : SDNode<"RISCVISD::MNRET_GLUE", SDTNone,
+                                [SDNPHasChain, SDNPOptInGlue]>;
 def riscv_selectcc  : SDNode<"RISCVISD::SELECT_CC", SDT_RISCVSelectCC>;
 def riscv_brcc      : SDNode<"RISCVISD::BR_CC", SDT_RISCVBrCC,
                              [SDNPHasChain]>;
@@ -818,7 +820,6 @@ def MRET : Priv<"mret", 0b0011000>, Sched<[]> {
   let rs1 = 0;
   let rs2 = 0b00010;
 }
-} // isBarrier = 1, isReturn = 1, isTerminator = 1
 
 let Predicates = [HasStdExtSmrnmi] in {
 def MNRET : Priv<"mnret", 0b0111000>, Sched<[]> {
@@ -827,6 +828,7 @@ def MNRET : Priv<"mnret", 0b0111000>, Sched<[]> {
   let rs2 = 0b00010;
 }
 }// Predicates = [HasStdExtSmrnmi]
+} // isBarrier = 1, isReturn = 1, isTerminator = 1
 
 def WFI : Priv<"wfi", 0b0001000>, Sched<[]> {
   let rd = 0;
@@ -1663,6 +1665,8 @@ def : Pat<(riscv_call texternalsym:$func), (PseudoCALL texternalsym:$func)>;
 
 def : Pat<(riscv_sret_glue), (SRET)>;
 def : Pat<(riscv_mret_glue), (MRET)>;
+let Predicates = [HasStdExtSmrnmi] in
+def : Pat<(riscv_mnret_glue), (MNRET)>;
 
 let isCall = 1, Defs = [X1] in {
 let Predicates = [NoStdExtZicfilp] in

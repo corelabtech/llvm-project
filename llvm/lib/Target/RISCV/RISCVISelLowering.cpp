@@ -20264,7 +20264,7 @@ SDValue RISCVTargetLowering::LowerFormalArguments(
     }
 
     StringRef Kind = Func.getFnAttribute("interrupt").getValueAsString();
-    if (Kind == "supervisor" || Kind == "machine") {
+    if (Kind == "supervisor" || Kind == "machine" || Kind == "rnmi") {
       if (!support_auto_stacking && STI.hasFeature(RISCV::FeatureFastIRQ)) {
         report_fatal_error(
           "Fast interrupt is not supported by this CPU!");
@@ -20937,6 +20937,8 @@ RISCVTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
     StringRef Kind = Func.getFnAttribute("interrupt").getValueAsString();
     if (Kind == "supervisor")
       RetOpc = RISCVISD::SRET_GLUE;
+    else if (Kind == "rnmi")
+      RetOpc = RISCVISD::MNRET_GLUE;
     else
       RetOpc = RISCVISD::MRET_GLUE;
   }
@@ -21011,6 +21013,7 @@ const char *RISCVTargetLowering::getTargetNodeName(unsigned Opcode) const {
   NODE_NAME_CASE(RET_GLUE)
   NODE_NAME_CASE(SRET_GLUE)
   NODE_NAME_CASE(MRET_GLUE)
+  NODE_NAME_CASE(MNRET_GLUE)
   NODE_NAME_CASE(CALL)
   NODE_NAME_CASE(TAIL)
   NODE_NAME_CASE(SELECT_CC)

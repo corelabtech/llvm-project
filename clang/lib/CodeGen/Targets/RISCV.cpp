@@ -613,6 +613,7 @@ public:
     switch (Attr->getInterrupt()) {
     case RISCVInterruptAttr::supervisor: Kind = "supervisor"; break;
     case RISCVInterruptAttr::machine: Kind = "machine"; break;
+    case RISCVInterruptAttr::rnmi: Kind = "rnmi"; break;
     }
 
     Fn->addFnAttr("interrupt", Kind);
