@@ -643,6 +643,10 @@ DecodeStatus RISCVDisassembler::getInstruction32(MCInst &MI, uint64_t &Size,
                     !STI.hasFeature(RISCV::Feature64Bit),
                 DecoderTableRV32Zacas32,
                 "RV32Zacas table (Compare-And-Swap and rv32)");
+  TRY_TO_DECODE(STI.hasFeature(RISCV::FeatureStdExtZilsd) &&
+                    !STI.hasFeature(RISCV::Feature64Bit),
+                DecoderTableRV32Only32,
+                "RV32Zilsd table (Load/Store pair and rv32)");
   TRY_TO_DECODE_FEATURE(RISCV::FeatureStdExtZfinx, DecoderTableRVZfinx32,
                         "RVZfinx table (Float in Integer)");
   TRY_TO_DECODE_FEATURE(RISCV::FeatureVendorXVentanaCondOps,
@@ -760,6 +764,10 @@ DecodeStatus RISCVDisassembler::getInstruction16(MCInst &MI, uint64_t &Size,
   TRY_TO_DECODE_AND_ADD_SP(!STI.hasFeature(RISCV::Feature64Bit),
                            DecoderTableRISCV32Only_16,
                            "RISCV32Only_16 table (16-bit Instruction)");
+  TRY_TO_DECODE_AND_ADD_SP(STI.hasFeature(RISCV::FeatureStdExtZclsd) &&
+                               !STI.hasFeature(RISCV::Feature64Bit),
+                           DecoderTableZcOverlap16,
+                           "RV32Zclsd table (Compressed load/store pair)");
   TRY_TO_DECODE_FEATURE(RISCV::FeatureStdExtZicfiss, DecoderTableZicfiss16,
                         "RVZicfiss table (Shadow Stack)");
   TRY_TO_DECODE_FEATURE(RISCV::FeatureStdExtZcmt, DecoderTableRVZcmt16,
