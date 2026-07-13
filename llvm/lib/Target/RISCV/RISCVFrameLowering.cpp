@@ -718,6 +718,9 @@ static void createConditionalSwapInst(MachineFunction &MF,
   const RISCVInstrInfo *TII = STI.getInstrInfo();
   const Function &Func = MF.getFunction();
 
+  if (!supportAutoStacking(MF)) {
+      return;
+  }
   if (Func.hasFnAttribute("interrupt")) {
     if (!STI.hasFeature(RISCV::FeatureFastIRQ)) {
       // Generate interrupt stack swap instruction
