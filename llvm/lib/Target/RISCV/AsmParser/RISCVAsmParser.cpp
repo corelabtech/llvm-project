@@ -213,6 +213,7 @@ class RISCVAsmParser : public MCTargetAsmParser {
   ParseStatus parseGPRPairAsFPR64(OperandVector &Operands);
   template <bool IsRV64Inst> ParseStatus parseGPRPair(OperandVector &Operands);
   ParseStatus parseGPRPair(OperandVector &Operands, bool IsRV64Inst);
+  ParseStatus parseGPR32PairReg(OperandVector &Operands);
   ParseStatus parseFRMArg(OperandVector &Operands);
   ParseStatus parseFenceArg(OperandVector &Operands);
   ParseStatus parseReglist(OperandVector &Operands);
@@ -663,6 +664,17 @@ public:
     // 'la imm' supports constant immediates only.
     return IsConstantImm && (VK == RISCVMCExpr::VK_RISCV_None) &&
            (isRV64Imm() || (isInt<32>(Imm) || isUInt<32>(Imm)));
+  }
+
+  bool isUImmLog2XLenBytes() const {
+    int64_t Imm;
+    RISCVMCExpr::VariantKind VK = RISCVMCExpr::VK_RISCV_None;
+    if (!isImm())
+      return false;
+    if (!evaluateConstantImm(getImm(), Imm, VK) ||
+        VK != RISCVMCExpr::VK_RISCV_None)
+      return false;
+    return (isRV64Imm() && isUInt<3>(Imm)) || isUInt<2>(Imm);
   }
 
   bool isUImmLog2XLen() const {
@@ -1536,6 +1548,10 @@ bool RISCVAsmParser::matchAndEmitInstruction(SMLoc IDLoc, unsigned &Opcode,
     if (isRV64())
       return generateImmOutOfRangeError(Operands, ErrorInfo, 1, (1 << 6) - 1);
     return generateImmOutOfRangeError(Operands, ErrorInfo, 1, (1 << 5) - 1);
+  case Match_InvalidUImmLog2XLenBytes:
+    if (isRV64())
+      return generateImmOutOfRangeError(Operands, ErrorInfo, 0, (1 << 3) - 1);
+    return generateImmOutOfRangeError(Operands, ErrorInfo, 0, (1 << 2) - 1);
   case Match_InvalidUImm1:
     return generateImmOutOfRangeError(Operands, ErrorInfo, 0, (1 << 1) - 1);
   case Match_InvalidUImm2:
@@ -2509,6 +2525,42 @@ ParseStatus RISCVAsmParser::parseGPRPair(OperandVector &Operands,
       Reg, RISCV::sub_gpr_even,
       &RISCVMCRegisterClasses[RISCV::GPRPairRegClassID]);
   Operands.push_back(RISCVOperand::createReg(Pair, S, E));
+  return ParseStatus::Success;
+}
+
+ParseStatus
+RISCVAsmParser::parseGPR32PairReg(OperandVector &Operands) {
+
+  switch (getLexer().getKind()) {
+  default:
+    return ParseStatus::NoMatch;
+  case AsmToken::Identifier:
+    StringRef Name = getLexer().getTok().getIdentifier();
+    MCRegister RegNo = matchRegisterNameHelper(Name);
+
+    if (RegNo == RISCV::NoRegister)
+      return ParseStatus::NoMatch;
+
+    const MCRegisterClass &GPRRegClass =
+        RISCVMCRegisterClasses[RISCV::GPRRegClassID];
+    if (!GPRRegClass.contains(RegNo)) {
+      Error(getLoc(), "expected general purpose register");
+      return ParseStatus::Failure;
+    }
+
+    if (!isRV64()) {
+      if ((RegNo - RISCV::X0) % 2 != 0) {
+        Error(getLoc(), "expected even register");
+        return ParseStatus::Failure;
+      }
+      RegNo = (RegNo - RISCV::X0) / 2 + RISCV::REG_PAIR_WITH_X0;
+    }
+    SMLoc S = getLoc();
+    SMLoc E = SMLoc::getFromPointer(S.getPointer() - 1);
+    getLexer().Lex();
+    Operands.push_back(RISCVOperand::createReg(RegNo, S, E, isRV64()));
+  }
+
   return ParseStatus::Success;
 }
 

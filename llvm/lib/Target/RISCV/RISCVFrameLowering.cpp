@@ -638,6 +638,104 @@ static MCCFIInstruction createDefCFAOffset(const TargetRegisterInfo &TRI,
                                         Comment.str());
 }
 
+static bool supportAutoStacking(const MachineFunction &MF)
+{
+  bool support_auto_stacking = false;
+  const auto &STI = MF.getSubtarget<RISCVSubtarget>();
+  Attribute CPUAttr = MF.getFunction().getFnAttribute("target-cpu");
+  if (CPUAttr.isValid()) {
+    std::string CPU = CPUAttr.getValueAsString().str();
+    if (CPU == "cl-cypress") {
+      support_auto_stacking = true;
+    }
+  }
+  return support_auto_stacking;
+}
+
+static bool registerSaveRestoreRequired(const MachineFunction &MF)
+{
+  bool required = true;
+  const auto &STI = MF.getSubtarget<RISCVSubtarget>();
+  if (supportAutoStacking(MF) && STI.hasFeature(RISCV::FeatureFastIRQ)) {
+    required = false;
+  }
+  return required;
+}
+
+static bool disableCSRBackup(const MachineFunction &MF)
+{
+  bool disabled = false;
+  if (MF.getFunction().hasFnAttribute("riscv_disable_csr_backup")) {
+    disabled = true;
+  }
+  return disabled;
+}
+
+static bool skipMIE(const MachineFunction &MF)
+{
+  bool skip = false;
+  if (MF.getFunction().hasFnAttribute("riscv_skip_mie")) {
+    skip = true;
+  }
+  return skip;
+}
+
+static bool isFPRUsed(const MachineFunction &MF)
+{
+  const MachineFrameInfo &MFI = MF.getFrameInfo();
+  const auto &CSI = MFI.getCalleeSavedInfo();
+  for (const auto &CS : CSI) {
+    Register Reg = CS.getReg();
+    if ((Reg.id() >= RISCV::F0_D && Reg.id() <= RISCV::F31_D) ||
+        (Reg.id() >= RISCV::F0_F && Reg.id() <= RISCV::F31_F)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool isFPRUsed(const BitVector &SavedRegs)
+{
+  for (unsigned long i =  RISCV::F0_D; i <=  RISCV::F31_D; i++) {
+    if (SavedRegs[i]) {
+      return true;
+    }
+  }
+  for (unsigned long i =  RISCV::F0_F; i <=  RISCV::F31_F; i++) {
+    if (SavedRegs[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static void createConditionalSwapInst(MachineFunction &MF,
+                                      MachineBasicBlock &MBB,
+                                      MachineBasicBlock::iterator MBBI,
+                                      const DebugLoc &DL)
+{
+  const auto &STI = MF.getSubtarget<RISCVSubtarget>();
+  const RISCVInstrInfo *TII = STI.getInstrInfo();
+  const Function &Func = MF.getFunction();
+
+  if (Func.hasFnAttribute("interrupt")) {
+    if (!STI.hasFeature(RISCV::FeatureFastIRQ)) {
+      // Generate interrupt stack swap instruction
+      if (Func.hasFnAttribute("riscv_cswl")) {
+        BuildMI(MBB, MBBI, DL, TII->get(RISCV::CSRRW))
+            .addReg(SPReg)
+            .addImm(RISCVSysReg::mscratchcswl)
+            .addReg(SPReg);
+      } else if (Func.hasFnAttribute("riscv_csw")) {
+        BuildMI(MBB, MBBI, DL, TII->get(RISCV::CSRRW))
+            .addReg(SPReg)
+            .addImm(RISCVSysReg::mscratchcsw)
+            .addReg(SPReg);
+      }
+    }
+  }
+}
+
 // Allocate stack space and probe it if necessary.
 void RISCVFrameLowering::allocateStack(MachineBasicBlock &MBB,
                                        MachineBasicBlock::iterator MBBI,
@@ -871,6 +969,8 @@ void RISCVFrameLowering::emitPrologue(MachineFunction &MF,
   if (RealStackSize == 0 && !MFI.adjustsStack() && RVVStackSize == 0)
     return;
 
+  createConditionalSwapInst(MF, MBB, MBBI, DL);
+
   // If the stack pointer has been marked as reserved, then produce an error if
   // the frame requires stack allocation
   if (STI.isRegisterReservedByUser(SPReg))
@@ -923,6 +1023,57 @@ void RISCVFrameLowering::emitPrologue(MachineFunction &MF,
   // FIXME: assumes exactly one instruction is used to save each callee-saved
   // register.
   std::advance(MBBI, getUnmanagedCSI(MF, CSI).size());
+
+  if (MF.getFunction().hasFnAttribute("interrupt") && CSI.size()) {
+    bool support_auto_stacking = supportAutoStacking(MF);
+    bool rsr_mode = registerSaveRestoreRequired(MF);
+    bool disabled = disableCSRBackup(MF);
+
+    if (STI.hasStdExtF() && rsr_mode && isFPRUsed(MF)) {
+      BuildMI(MBB, MBBI, DL, TII->get(RISCV::CSRRS))
+          .addReg(RISCV::X5, RegState::Define)
+          .addImm(RISCVSysReg::lookupSysRegByName("FCSR")->Encoding)
+          .addReg(RISCV::X0);
+
+      TII->storeRegToStackSlot(MBB, MBBI, RISCV::X5, /* IsKill */ false,
+                               RVFI->getFcsrFI(), &RISCV::GPRRegClass, RI,
+                               Register());
+    }
+
+    // Save mepc/mcause/mexinfo
+    if (support_auto_stacking && rsr_mode && !disabled) {
+      BuildMI(MBB, MBBI, DL, TII->get(RISCV::CSRRS))
+          .addReg(RISCV::X5, RegState::Define)
+          .addImm(RISCVSysReg::lookupSysRegByName("MEPC")->Encoding)
+          .addReg(RISCV::X0);
+      TII->storeRegToStackSlot(MBB, MBBI, RISCV::X5, /* IsKill */ false,
+                               RVFI->getMepcFI(), &RISCV::GPRRegClass, RI,
+                               Register());
+
+      BuildMI(MBB, MBBI, DL, TII->get(RISCV::CSRRS))
+          .addReg(RISCV::X5, RegState::Define)
+          .addImm(RISCVSysReg::lookupSysRegByName("MCAUSE")->Encoding)
+          .addReg(RISCV::X0);
+      TII->storeRegToStackSlot(MBB, MBBI, RISCV::X5, /* IsKill */ false,
+                               RVFI->getMcauseFI(), &RISCV::GPRRegClass, RI,
+                               Register());
+
+      BuildMI(MBB, MBBI, DL, TII->get(RISCV::CSRRS))
+          .addReg(RISCV::X5, RegState::Define)
+          .addImm(RISCVSysReg::lookupSysRegByName("MEXINFO")->Encoding)
+          .addReg(RISCV::X0);
+      TII->storeRegToStackSlot(MBB, MBBI, RISCV::X5, /* IsKill */ false,
+                               RVFI->getMexinfoFI(), &RISCV::GPRRegClass, RI,
+                               Register());
+
+      if (!skipMIE(MF)) {
+        BuildMI(MBB, MBBI, DL, TII->get(RISCV::CSRRSI))
+            .addReg(RISCV::X0, RegState::Define)
+            .addImm(RISCVSysReg::lookupSysRegByName("MSTATUS")->Encoding)
+            .addImm(8);
+      }
+    }
+  }
 
   // Iterate over list of callee-saved registers and emit .cfi_offset
   // directives.
@@ -1095,6 +1246,54 @@ void RISCVFrameLowering::emitEpilogue(MachineFunction &MF,
   auto FirstScalarCSRRestoreInsn =
       std::next(MBBI, getRVVCalleeSavedInfo(MF, CSI).size());
 
+  if (MF.getFunction().hasFnAttribute("interrupt") && CSI.size()) {
+    bool support_auto_stacking = supportAutoStacking(MF);
+    bool rsr_mode = registerSaveRestoreRequired(MF);
+    bool disabled = disableCSRBackup(MF);
+
+    if (STI.hasStdExtF() && rsr_mode && isFPRUsed(MF)) {
+      TII->loadRegFromStackSlot(MBB, MBBI, RISCV::X5,
+                                RVFI->getFcsrFI(), &RISCV::GPRRegClass, RI,
+                                Register());
+      BuildMI(MBB, MBBI, DL, TII->get(RISCV::CSRRW))
+          .addReg(RISCV::X0, RegState::Define)
+          .addImm(RISCVSysReg::lookupSysRegByName("FCSR")->Encoding)
+          .addReg(RISCV::X5);
+    }
+    // Restore mepc/mcause/mexinfo
+    if (support_auto_stacking && rsr_mode && !disabled) {
+      if (!skipMIE(MF)) {
+        BuildMI(MBB, MBBI, DL, TII->get(RISCV::CSRRCI))
+            .addReg(RISCV::X0, RegState::Define)
+            .addImm(RISCVSysReg::lookupSysRegByName("MSTATUS")->Encoding)
+            .addImm(8);
+      }
+
+      TII->loadRegFromStackSlot(MBB, MBBI, RISCV::X5,
+                                RVFI->getMepcFI(), &RISCV::GPRRegClass, RI,
+                                Register());
+      BuildMI(MBB, MBBI, DL, TII->get(RISCV::CSRRW))
+          .addReg(RISCV::X0, RegState::Define)
+          .addImm(RISCVSysReg::lookupSysRegByName("MEPC")->Encoding)
+          .addReg(RISCV::X5);
+
+      TII->loadRegFromStackSlot(MBB, MBBI, RISCV::X5,
+                                RVFI->getMcauseFI(), &RISCV::GPRRegClass, RI,
+                                Register());
+      BuildMI(MBB, MBBI, DL, TII->get(RISCV::CSRRW))
+          .addReg(RISCV::X0, RegState::Define)
+          .addImm(RISCVSysReg::lookupSysRegByName("MCAUSE")->Encoding)
+          .addReg(RISCV::X5);
+      TII->loadRegFromStackSlot(MBB, MBBI, RISCV::X5,
+                                RVFI->getMexinfoFI(), &RISCV::GPRRegClass, RI,
+                                Register());
+      BuildMI(MBB, MBBI, DL, TII->get(RISCV::CSRRW))
+          .addReg(RISCV::X0, RegState::Define)
+          .addImm(RISCVSysReg::lookupSysRegByName("MEXINFO")->Encoding)
+          .addReg(RISCV::X5);
+    }
+  }
+
   uint64_t FirstSPAdjustAmount = getFirstSPAdjustAmount(MF);
   uint64_t RealStackSize = FirstSPAdjustAmount ? FirstSPAdjustAmount
                                                : getStackSizeWithRVVPadding(MF);
@@ -1235,6 +1434,9 @@ void RISCVFrameLowering::emitEpilogue(MachineFunction &MF,
 
   // Emit epilogue for shadow call stack.
   emitSCSEpilogue(MF, MBB, MBBI, DL);
+
+  if (RealStackSize != 0 || MFI.adjustsStack() || RVVStackSize != 0)
+    createConditionalSwapInst(MF, MBB, MBBI, DL);
 }
 
 StackOffset
@@ -1271,7 +1473,29 @@ RISCVFrameLowering::getFrameIndexReference(const MachineFunction &MF, int FI,
     MaxCSFI = CSI[CSI.size() - 1].getFrameIdx();
   }
 
-  if (FI >= MinCSFI && FI <= MaxCSFI) {
+  bool support_auto_stacking = false;
+  Attribute CPUAttr = MF.getFunction().getFnAttribute("target-cpu");
+  if (CPUAttr.isValid()) {
+    std::string CPU = CPUAttr.getValueAsString().str();
+    if (CPU == "cl-cypress") {
+      support_auto_stacking = true;
+    }
+  }
+  bool save_csr = false;
+  if (MF.getFunction().hasFnAttribute("interrupt")) {
+    bool support_auto_stacking = supportAutoStacking(MF);
+    bool rsr_mode = registerSaveRestoreRequired(MF);
+    bool disabled = disableCSRBackup(MF);
+
+    if (rsr_mode && MF.getSubtarget<RISCVSubtarget>().hasStdExtF() && FI == RVFI->getFcsrFI()) {
+      save_csr = true;
+    }
+    if (support_auto_stacking && rsr_mode && !disabled &&
+       (FI == RVFI->getMepcFI() || FI == RVFI->getMcauseFI() || FI == RVFI->getMexinfoFI())) {
+      save_csr = true;
+    }
+  }
+  if ((FI >= MinCSFI && FI <= MaxCSFI) || save_csr) {
     FrameReg = SPReg;
 
     if (FirstSPAdjustAmount)
@@ -1427,6 +1651,37 @@ void RISCVFrameLowering::determineCalleeSaves(MachineFunction &MF,
   auto *RVFI = MF.getInfo<RISCVMachineFunctionInfo>();
   if (RVFI->isPushable(MF) && SavedRegs.test(RISCV::X26))
     SavedRegs.set(RISCV::X27);
+
+  if (MF.getFunction().hasFnAttribute("interrupt") && SavedRegs.count()) {
+    bool support_auto_stacking = supportAutoStacking(MF);
+    bool rsr_mode = registerSaveRestoreRequired(MF);
+    bool disabled = disableCSRBackup(MF);
+
+    if (MF.getSubtarget<RISCVSubtarget>().hasStdExtF() && rsr_mode && isFPRUsed(SavedRegs)) {
+      SavedRegs.set(RISCV::X5);
+      MF.getInfo<RISCVMachineFunctionInfo>()->setFcsrFI(
+          MF.getFrameInfo().CreateStackObject(
+              STI.getRegisterInfo()->getSpillSize(RISCV::GPRRegClass),
+              STI.getRegisterInfo()->getSpillAlign(RISCV::GPRRegClass), false));
+    }
+    if (support_auto_stacking && rsr_mode && !disabled) {
+      SavedRegs.set(RISCV::X5);
+      MF.getInfo<RISCVMachineFunctionInfo>()->setMepcFI(
+          MF.getFrameInfo().CreateStackObject(
+              STI.getRegisterInfo()->getSpillSize(RISCV::GPRRegClass),
+              STI.getRegisterInfo()->getSpillAlign(RISCV::GPRRegClass), false));
+
+      MF.getInfo<RISCVMachineFunctionInfo>()->setMcauseFI(
+          MF.getFrameInfo().CreateStackObject(
+              STI.getRegisterInfo()->getSpillSize(RISCV::GPRRegClass),
+              STI.getRegisterInfo()->getSpillAlign(RISCV::GPRRegClass), false));
+
+      MF.getInfo<RISCVMachineFunctionInfo>()->setMexinfoFI(
+          MF.getFrameInfo().CreateStackObject(
+              STI.getRegisterInfo()->getSpillSize(RISCV::GPRRegClass),
+              STI.getRegisterInfo()->getSpillAlign(RISCV::GPRRegClass), false));
+    }
+  }
 }
 
 std::pair<int64_t, Align>

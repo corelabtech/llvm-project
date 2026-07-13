@@ -593,6 +593,18 @@ public:
     if (CGM.getCodeGenOpts().CFProtectionReturn)
       Fn->addFnAttr("hw-shadow-stack");
 
+    if (FD->getAttr<RISCVCSWAttr>())
+      Fn->addFnAttr("riscv_csw");
+
+    if (FD->getAttr<RISCVCSWLAttr>())
+      Fn->addFnAttr("riscv_cswl");
+
+    if (FD->getAttr<RISCVDisableCSRBackupAttr>())
+      Fn->addFnAttr("riscv_disable_csr_backup");
+
+    if (FD->getAttr<RISCVSkipMIEAttr>())
+      Fn->addFnAttr("riscv_skip_mie");
+
     const auto *Attr = FD->getAttr<RISCVInterruptAttr>();
     if (!Attr)
       return;

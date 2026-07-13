@@ -406,6 +406,63 @@
 // RUN: -fsyntax-only 2>&1 | FileCheck -check-prefix=RV32-ZBA %s
 // RV32-ZBA: "-target-feature" "+zba"
 
+// RUN: not %clang -target riscv32-unknown-elf -march=rv32ip -### %s -c 2>&1 | \
+// RUN:   FileCheck -check-prefix=RV32-EXPERIMENTAL-P-NOFLAG %s
+// RV32-EXPERIMENTAL-P-NOFLAG: error: invalid arch name 'rv32ip'
+// RV32-EXPERIMENTAL-P-NOFLAG: requires '-menable-experimental-extensions'
+
+// RUN: not %clang -target riscv32-unknown-elf -march=rv32ip -menable-experimental-extensions -### %s -c 2>&1 | \
+// RUN:   FileCheck -check-prefix=RV32-EXPERIMENTAL-P-NOVERS %s
+// RV32-EXPERIMENTAL-P-NOVERS: error: invalid arch name 'rv32ip'
+// RV32-EXPERIMENTAL-P-NOVERS: experimental extension requires explicit version number
+
+// RUN: not %clang -target riscv32-unknown-elf -march=rv32ip0p1 -menable-experimental-extensions -### %s -c 2>&1 | \
+// RUN:   FileCheck -check-prefix=RV32-EXPERIMENTAL-P-BADVERS %s
+// RV32-EXPERIMENTAL-P-BADVERS: error: invalid arch name 'rv32ip0p1'
+// RV32-EXPERIMENTAL-P-BADVERS: unsupported version number 0.1 for experimental extension
+
+// RUN: %clang -target riscv32-unknown-elf -march=rv32ip0p911 -menable-experimental-extensions -### %s -c 2>&1 | \
+// RUN:   FileCheck -check-prefix=RV32-EXPERIMENTAL-P-GOODVERS %s
+// RV32-EXPERIMENTAL-P-GOODVERS: "-target-feature" "+experimental-p"
+
+// RUN: not %clang -target riscv32-unknown-elf -march=rv32izbpbo -### %s -c 2>&1 | \
+// RUN:   FileCheck -check-prefix=RV32-EXPERIMENTAL-ZBPBO-NOFLAG %s
+// RV32-EXPERIMENTAL-ZBPBO-NOFLAG: error: invalid arch name 'rv32izbpbo'
+// RV32-EXPERIMENTAL-ZBPBO-NOFLAG: requires '-menable-experimental-extensions'
+
+// RUN: not %clang -target riscv32-unknown-elf -march=rv32izbpbo -menable-experimental-extensions -### %s -c 2>&1 | \
+// RUN:   FileCheck -check-prefix=RV32-EXPERIMENTAL-ZBPBO-NOVERS %s
+// RV32-EXPERIMENTAL-ZBPBO-NOVERS: error: invalid arch name 'rv32izbpbo'
+// RV32-EXPERIMENTAL-ZBPBO-NOVERS: experimental extension requires explicit version number
+
+// RUN: not %clang -target riscv32-unknown-elf -march=rv32izbpbo0p1 -menable-experimental-extensions -### %s -c 2>&1 | \
+// RUN:   FileCheck -check-prefix=RV32-EXPERIMENTAL-ZBPBO-BADVERS %s
+// RV32-EXPERIMENTAL-ZBPBO-BADVERS: error: invalid arch name 'rv32izbpbo0p1'
+// RV32-EXPERIMENTAL-ZBPBO-BADVERS: unsupported version number 0.1 for experimental extension
+
+// RUN: %clang -target riscv32-unknown-elf -march=rv32izbpbo0p911 -menable-experimental-extensions -### %s -c 2>&1 | \
+// RUN:   FileCheck -check-prefix=RV32-EXPERIMENTAL-ZBPBO-GOODVERS %s
+// RV32-EXPERIMENTAL-ZBPBO-GOODVERS: "-target-feature" "+experimental-zbpbo"
+
+// RUN: not %clang -target riscv32-unknown-elf -march=rv32izpn -### %s -c 2>&1 | \
+// RUN:   FileCheck -check-prefix=RV32-EXPERIMENTAL-ZPN-NOFLAG %s
+// RV32-EXPERIMENTAL-ZPN-NOFLAG: error: invalid arch name 'rv32izpn'
+// RV32-EXPERIMENTAL-ZPN-NOFLAG: requires '-menable-experimental-extensions'
+
+// RUN: not %clang -target riscv32-unknown-elf -march=rv32izpn -menable-experimental-extensions -### %s -c 2>&1 | \
+// RUN:   FileCheck -check-prefix=RV32-EXPERIMENTAL-ZPN-NOVERS %s
+// RV32-EXPERIMENTAL-ZPN-NOVERS: error: invalid arch name 'rv32izpn'
+// RV32-EXPERIMENTAL-ZPN-NOVERS: experimental extension requires explicit version number
+
+// RUN: not %clang -target riscv32-unknown-elf -march=rv32izpn0p1 -menable-experimental-extensions -### %s -c 2>&1 | \
+// RUN:   FileCheck -check-prefix=RV32-EXPERIMENTAL-ZPN-BADVERS %s
+// RV32-EXPERIMENTAL-ZPN-BADVERS: error: invalid arch name 'rv32izpn0p1'
+// RV32-EXPERIMENTAL-ZPN-BADVERS: unsupported version number 0.1 for experimental extension
+
+// RUN: %clang -target riscv32-unknown-elf -march=rv32izpn0p911 -menable-experimental-extensions -### %s -c 2>&1 | \
+// RUN:   FileCheck -check-prefix=RV32-EXPERIMENTAL-ZPN-GOODVERS %s
+// RV32-EXPERIMENTAL-ZPN-GOODVERS: "-target-feature" "+experimental-zpn"
+
 // RUN: not %clang --target=riscv32-unknown-elf -march=rv32iv0p1 -### %s -c 2>&1 | \
 // RUN:   FileCheck -check-prefix=RV32-V-BADVERS %s
 // RV32-V-BADVERS: error: invalid arch name 'rv32iv0p1'

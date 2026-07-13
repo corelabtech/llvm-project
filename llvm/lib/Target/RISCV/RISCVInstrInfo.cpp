@@ -2590,6 +2590,9 @@ bool RISCVInstrInfo::verifyInstruction(const MachineInstr &MI,
           else
             Ok = RISCVFPRndMode::isValidRoundingMode(Imm);
           break;
+        case RISCVOp::OPERAND_UIMMLOG2XLENBYTES:
+          Ok = STI.is64Bit() ? isUInt<3>(Imm) : isUInt<2>(Imm);
+          break;
         }
         if (!Ok) {
           ErrInfo = "Invalid immediate";

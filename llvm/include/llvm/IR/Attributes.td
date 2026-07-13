@@ -392,6 +392,16 @@ def CoroDestroyOnlyWhenComplete : EnumAttr<"coro_only_destroy_when_complete", In
 /// pipeline to perform elide on the call or invoke instruction.
 def CoroElideSafe : EnumAttr<"coro_elide_safe", IntersectPreserve, [FnAttr]>;
 
+/// Use interrupt stack
+def RISCVCSW  : EnumAttr<"riscv_csw", IntersectPreserve, [FnAttr]>;
+def RISCVCSWL : EnumAttr<"riscv_cswl", IntersectPreserve, [FnAttr]>;
+
+/// Disable CSR backup
+def RISCVDisableCSRBackup : EnumAttr<"riscv_disable_csr_backup", IntersectPreserve, [FnAttr]>;
+
+/// Skip mstatus.mie set/clear
+def RISCVSkipMIE : EnumAttr<"riscv_skip_mie", IntersectPreserve, [FnAttr]>;
+
 /// Target-independent string attributes.
 def LessPreciseFPMAD : StrBoolAttr<"less-precise-fpmad">;
 def NoInfsFPMath : StrBoolAttr<"no-infs-fp-math">;

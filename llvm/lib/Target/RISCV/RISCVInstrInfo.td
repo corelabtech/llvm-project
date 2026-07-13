@@ -240,7 +240,7 @@ def InsnDirectiveOpcode : AsmOperandClass {
 
 def uimm1 : RISCVUImmLeafOp<1>;
 def uimm2 : RISCVUImmLeafOp<2>;
-def uimm3 : RISCVUImmOp<3>;
+def uimm3 : RISCVUImmLeafOp<3>;
 def uimm4 : RISCVUImmLeafOp<4>;
 def uimm5 : RISCVUImmLeafOp<5>;
 def uimm6 : RISCVUImmLeafOp<6>;
@@ -2088,6 +2088,13 @@ def : Pat<(binop_allwusers<add> GPR:$rs1, immop_oneuse<AddiPair>:$rs2),
                  (AddiPairImmSmall imm:$rs2))>;
 }
 
+def : Pat<(i64 (anyext (i32 GPR:$src))), (COPY GPR:$src)>;
+def : Pat<(v2i32 (anyext (v2i16 GPR:$src))), (COPY GPR:$src)>;
+def : Pat<(v4i16 (anyext (v4i8 GPR:$src))), (COPY GPR:$src)>;
+def : Pat<(v4i8 (trunc (v4i16 GPR:$src))), (COPY GPR:$src)>;
+def : Pat<(v2i16 (trunc (v2i32 GPR:$src))), (COPY GPR:$src)>;
+def : Pat<(i32 (trunc (i64 GPR:$src))), (COPY GPR:$src)>;
+
 //===----------------------------------------------------------------------===//
 // Standard extensions
 //===----------------------------------------------------------------------===//
@@ -2144,3 +2151,6 @@ include "RISCVInstrInfoXMips.td"
 //===----------------------------------------------------------------------===//
 
 include "RISCVInstrGISel.td"
+
+// P (Packed-SIMD) extensions
+include "RISCVInstrInfoP.td"

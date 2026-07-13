@@ -722,6 +722,10 @@ DecodeStatus RISCVDisassembler::getInstruction32(MCInst &MI, uint64_t &Size,
   TRY_TO_DECODE_FEATURE(RISCV::FeatureVendorXqciint, DecoderTableXqciint32,
                         "Qualcomm uC Interrupts custom opcode table");
   TRY_TO_DECODE(true, DecoderTable32, "RISCV32 table");
+  TRY_TO_DECODE(STI.hasFeature(RISCV::FeatureStdExtZpn) ||
+                STI.hasFeature(RISCV::FeatureStdExtZpsfoperand) ||
+                STI.hasFeature(RISCV::FeatureStdExtZbpbo),
+                DecoderTableRISCV32POnly_32, "RISCV32Only table");
 
   return MCDisassembler::Fail;
 }

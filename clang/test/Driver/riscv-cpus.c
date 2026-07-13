@@ -620,3 +620,27 @@
 
 // RUN: %clang --target=riscv64 -### -c %s 2>&1 -mtune=syntacore-scr7 | FileCheck -check-prefix=MTUNE-SYNTACORE-SCR7 %s
 // MTUNE-SYNTACORE-SCR7: "-tune-cpu" "syntacore-scr7"
+
+// RUN: %clang --target=riscv32 -### -c %s 2>&1 -mcpu=cl-cypress -menable-experimental-extensions | FileCheck -check-prefix=MCPU-CL-CYPRESS %s
+// MCPU-CL-CYPRESS: "-nostdsysteminc" "-target-cpu" "cl-cypress"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+m"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+a"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+f"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+d"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+c"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+zicbom"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+zicntr"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+zicond"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+zicsr"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+zifencei"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+zihpm"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+zba"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+zbb"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+zbc"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+experimental-zbpbo"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+zbs"
+// MCPU-CL-CYPRESS-SAME: "-target-feature" "+experimental-zpn"
+// MCPU-CL-CYPRESS-SAME: "-target-abi" "ilp32d"
+
+// RUN: %clang --target=riscv32 -### -c %s 2>&1 -mtune=cl-cypress -menable-experimental-extensions | FileCheck -check-prefix=MTUNE-CL-CYPRESS %s
+// MTUNE-CL-CYPRESS: "-tune-cpu" "cl-cypress"

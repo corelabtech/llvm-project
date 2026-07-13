@@ -153,6 +153,8 @@ bool getJMCInstrument();
 
 bool getXCOFFReadOnlyPointers();
 
+bool getEnableFastIRQ();
+
 /// Create this object with static storage to register codegen-related command
 /// line options.
 struct RegisterCodeGenFlags {

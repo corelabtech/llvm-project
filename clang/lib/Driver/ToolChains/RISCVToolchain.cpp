@@ -105,8 +105,11 @@ void RISCVToolChain::AddClangSystemIncludeArgs(const ArgList &DriverArgs,
 
   if (!DriverArgs.hasArg(options::OPT_nobuiltininc)) {
     SmallString<128> Dir(getDriver().ResourceDir);
+    SmallString<128> InstPath(GCCInstallation.getInstallPath());
     llvm::sys::path::append(Dir, "include");
+    llvm::sys::path::append(InstPath, "include");
     addSystemInclude(DriverArgs, CC1Args, Dir.str());
+    addSystemInclude(DriverArgs, CC1Args, InstPath.str());
   }
 
   if (!DriverArgs.hasArg(options::OPT_nostdlibinc)) {

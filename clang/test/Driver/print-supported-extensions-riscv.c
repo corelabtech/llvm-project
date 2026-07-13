@@ -182,9 +182,13 @@
 // CHECK-NEXT:     xwchc                2.2       'Xwchc' (WCH/QingKe additional compressed opcodes)
 // CHECK-EMPTY:
 // CHECK-NEXT: Experimental extensions
+// CHECK-NEXT:     p                    0.911     'P' ('P' (Packed-SIMD Instructions))
 // CHECK-NEXT:     zicfilp              1.0       'Zicfilp' (Landing pad)
 // CHECK-NEXT:     zicfiss              1.0       'Zicfiss' (Shadow stack)
 // CHECK-NEXT:     zalasr               0.1       'Zalasr' (Load-Acquire and Store-Release Instructions)
+// CHECK-NEXT:     zbpbo                0.911     'Zbpbo' ('Zbpbo' ('B' & 'P' Overlay Instructions))
+// CHECK-NEXT:     zpn                  0.911     'Zpn' ('Zpn' (Normal 'P' Instructions))
+// CHECK-NEXT:     zpsfoperand          0.911     'Zpsfoperand' ('Zpsfoperand' (64-bit operand 'P' Instructions))
 // CHECK-NEXT:     zvbc32e              0.7       'Zvbc32e' (Vector Carryless Multiplication with 32-bits elements)
 // CHECK-NEXT:     zvkgs                0.7       'Zvkgs' (Vector-Scalar GCM instructions for Cryptography)
 // CHECK-NEXT:     sdext                1.0       'Sdext' (External debugger)

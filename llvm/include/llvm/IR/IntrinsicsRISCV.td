@@ -1883,3 +1883,277 @@ let TargetPrefix = "riscv" in {
 include "llvm/IR/IntrinsicsRISCVXTHead.td"
 include "llvm/IR/IntrinsicsRISCVXsf.td"
 include "llvm/IR/IntrinsicsRISCVXCV.td"
+
+//===----------------------------------------------------------------------===//
+// Packing SIMD
+
+let TargetPrefix = "riscv" in {
+  class RVPUnaryIntrinsics
+      : Intrinsic<[llvm_any_ty],
+                  [LLVMMatchType<0>],
+                  [IntrNoMem]>;
+
+  multiclass RVPUnaryIntrinsics {
+    def "int_riscv_" # NAME : RVPUnaryIntrinsics;
+  }
+
+  defm clz       : RVPUnaryIntrinsics;
+  defm rev       : RVPUnaryIntrinsics;
+  defm rev8h     : RVPUnaryIntrinsics;
+  defm clrs8     : RVPUnaryIntrinsics;
+  defm clrs16    : RVPUnaryIntrinsics;
+  defm clrs32    : RVPUnaryIntrinsics;
+  defm clz8      : RVPUnaryIntrinsics;
+  defm clz16     : RVPUnaryIntrinsics;
+  defm clz32     : RVPUnaryIntrinsics;
+  defm kabs8     : RVPUnaryIntrinsics;
+  defm kabs16    : RVPUnaryIntrinsics;
+  defm kabsw     : RVPUnaryIntrinsics;
+  defm swap8     : RVPUnaryIntrinsics;
+  defm swap16    : RVPUnaryIntrinsics;
+  defm sunpkd810 : RVPUnaryIntrinsics;
+  defm sunpkd820 : RVPUnaryIntrinsics;
+  defm sunpkd830 : RVPUnaryIntrinsics;
+  defm sunpkd831 : RVPUnaryIntrinsics;
+  defm sunpkd832 : RVPUnaryIntrinsics;
+  defm zunpkd810 : RVPUnaryIntrinsics;
+  defm zunpkd820 : RVPUnaryIntrinsics;
+  defm zunpkd830 : RVPUnaryIntrinsics;
+  defm zunpkd831 : RVPUnaryIntrinsics;
+  defm zunpkd832 : RVPUnaryIntrinsics;
+
+  class RVPBinaryIntrinsics
+      : Intrinsic<[llvm_any_ty],
+                  [LLVMMatchType<0>, LLVMMatchType<0>],
+                  [IntrNoMem]>;
+
+  multiclass RVPBinaryIntrinsics {
+    def "int_riscv_" # NAME : RVPBinaryIntrinsics;
+  }
+
+  defm max      : RVPBinaryIntrinsics;
+  defm min      : RVPBinaryIntrinsics;
+  defm pack     : RVPBinaryIntrinsics;
+  defm packu    : RVPBinaryIntrinsics;
+  defm add8     : RVPBinaryIntrinsics;
+  defm add16    : RVPBinaryIntrinsics;
+  defm ave      : RVPBinaryIntrinsics;
+  defm cmpeq8   : RVPBinaryIntrinsics;
+  defm cmpeq16  : RVPBinaryIntrinsics;
+  defm cras16   : RVPBinaryIntrinsics;
+  defm crsa16   : RVPBinaryIntrinsics;
+  defm kadd8    : RVPBinaryIntrinsics;
+  defm kadd16   : RVPBinaryIntrinsics;
+  defm kaddw    : RVPBinaryIntrinsics;
+  defm kcras16  : RVPBinaryIntrinsics;
+  defm kcrsa16  : RVPBinaryIntrinsics;
+  defm khm8     : RVPBinaryIntrinsics;
+  defm khmx8    : RVPBinaryIntrinsics;
+  defm khm16    : RVPBinaryIntrinsics;
+  defm khmx16   : RVPBinaryIntrinsics;
+  defm kslraw   : RVPBinaryIntrinsics;
+  defm kslraw_u : RVPBinaryIntrinsics;
+  defm kstas16  : RVPBinaryIntrinsics;
+  defm kstsa16  : RVPBinaryIntrinsics;
+  defm ksub8    : RVPBinaryIntrinsics;
+  defm ksub16   : RVPBinaryIntrinsics;
+  defm ksubw    : RVPBinaryIntrinsics;
+  defm kwmmul   : RVPBinaryIntrinsics;
+  defm kwmmul_u : RVPBinaryIntrinsics;
+  defm maxw     : RVPBinaryIntrinsics;
+  defm minw     : RVPBinaryIntrinsics;
+  defm pkbb16   : RVPBinaryIntrinsics;
+  defm pkbt16   : RVPBinaryIntrinsics;
+  defm pktt16   : RVPBinaryIntrinsics;
+  defm pktb16   : RVPBinaryIntrinsics;
+  defm radd8    : RVPBinaryIntrinsics;
+  defm radd16   : RVPBinaryIntrinsics;
+  defm raddw    : RVPBinaryIntrinsics;
+  defm rcras16  : RVPBinaryIntrinsics;
+  defm rcrsa16  : RVPBinaryIntrinsics;
+  defm rstas16  : RVPBinaryIntrinsics;
+  defm rstsa16  : RVPBinaryIntrinsics;
+  defm rsub8    : RVPBinaryIntrinsics;
+  defm rsub16   : RVPBinaryIntrinsics;
+  defm rsubw    : RVPBinaryIntrinsics;
+  defm scmple8  : RVPBinaryIntrinsics;
+  defm scmple16 : RVPBinaryIntrinsics;
+  defm scmplt8  : RVPBinaryIntrinsics;
+  defm scmplt16 : RVPBinaryIntrinsics;
+  defm smax8    : RVPBinaryIntrinsics;
+  defm smax16   : RVPBinaryIntrinsics;
+  defm smin8    : RVPBinaryIntrinsics;
+  defm smin16   : RVPBinaryIntrinsics;
+  defm smmul    : RVPBinaryIntrinsics;
+  defm smmul_u  : RVPBinaryIntrinsics;
+  defm stas16   : RVPBinaryIntrinsics;
+  defm stsa16   : RVPBinaryIntrinsics;
+  defm sub8     : RVPBinaryIntrinsics;
+  defm sub16    : RVPBinaryIntrinsics;
+  defm ucmple8  : RVPBinaryIntrinsics;
+  defm ucmple16 : RVPBinaryIntrinsics;
+  defm ucmplt8  : RVPBinaryIntrinsics;
+  defm ucmplt16 : RVPBinaryIntrinsics;
+  defm ukadd8   : RVPBinaryIntrinsics;
+  defm ukadd16  : RVPBinaryIntrinsics;
+  defm ukaddw   : RVPBinaryIntrinsics;
+  defm ukcras16 : RVPBinaryIntrinsics;
+  defm ukcrsa16 : RVPBinaryIntrinsics;
+  defm ukstas16 : RVPBinaryIntrinsics;
+  defm ukstsa16 : RVPBinaryIntrinsics;
+  defm uksub8   : RVPBinaryIntrinsics;
+  defm uksub16  : RVPBinaryIntrinsics;
+  defm uksubw   : RVPBinaryIntrinsics;
+  defm umax8    : RVPBinaryIntrinsics;
+  defm umax16   : RVPBinaryIntrinsics;
+  defm umin8    : RVPBinaryIntrinsics;
+  defm umin16   : RVPBinaryIntrinsics;
+  defm uradd8   : RVPBinaryIntrinsics;
+  defm uradd16  : RVPBinaryIntrinsics;
+  defm uraddw   : RVPBinaryIntrinsics;
+  defm urcras16 : RVPBinaryIntrinsics;
+  defm urcrsa16 : RVPBinaryIntrinsics;
+  defm urstas16 : RVPBinaryIntrinsics;
+  defm urstsa16 : RVPBinaryIntrinsics;
+  defm ursub8   : RVPBinaryIntrinsics;
+  defm ursub16  : RVPBinaryIntrinsics;
+  defm ursubw   : RVPBinaryIntrinsics;
+  defm kdmbb    : RVPBinaryIntrinsics;
+  defm kdmbt    : RVPBinaryIntrinsics;
+  defm kdmtt    : RVPBinaryIntrinsics;
+  defm khmbb    : RVPBinaryIntrinsics;
+  defm khmbt    : RVPBinaryIntrinsics;
+  defm khmtt    : RVPBinaryIntrinsics;
+  defm kmda     : RVPBinaryIntrinsics;
+  defm kmxda    : RVPBinaryIntrinsics;
+  defm pbsad    : RVPBinaryIntrinsics;
+  defm smbb16   : RVPBinaryIntrinsics;
+  defm smbt16   : RVPBinaryIntrinsics;
+  defm smtt16   : RVPBinaryIntrinsics;
+  defm smds     : RVPBinaryIntrinsics;
+  defm smdrs    : RVPBinaryIntrinsics;
+  defm smxds    : RVPBinaryIntrinsics;
+
+  class RVPBinaryAABIntrinsics
+      : Intrinsic<[llvm_any_ty],
+                  [LLVMMatchType<0>, llvm_any_ty],
+                  [IntrNoMem]>;
+
+  multiclass RVPBinaryAABIntrinsics {
+    def "int_riscv_" # NAME   : RVPBinaryAABIntrinsics;
+  }
+
+  defm bitrev    : RVPBinaryAABIntrinsics;
+  defm ksllw     : RVPBinaryAABIntrinsics;
+  defm kmmwb2    : RVPBinaryAABIntrinsics;
+  defm kmmwb2_u  : RVPBinaryAABIntrinsics;
+  defm kmmwt2    : RVPBinaryAABIntrinsics;
+  defm kmmwt2_u  : RVPBinaryAABIntrinsics;
+  defm ksll8     : RVPBinaryAABIntrinsics;
+  defm ksll16    : RVPBinaryAABIntrinsics;
+  defm kslra8    : RVPBinaryAABIntrinsics;
+  defm kslra8_u  : RVPBinaryAABIntrinsics;
+  defm kslra16   : RVPBinaryAABIntrinsics;
+  defm kslra16_u : RVPBinaryAABIntrinsics;
+  defm sclip8    : RVPBinaryAABIntrinsics;
+  defm sclip16   : RVPBinaryAABIntrinsics;
+  defm sclip32   : RVPBinaryAABIntrinsics;
+  defm sll8      : RVPBinaryAABIntrinsics;
+  defm sll16     : RVPBinaryAABIntrinsics;
+  defm smmwb     : RVPBinaryAABIntrinsics;
+  defm smmwb_u   : RVPBinaryAABIntrinsics;
+  defm smmwt     : RVPBinaryAABIntrinsics;
+  defm smmwt_u   : RVPBinaryAABIntrinsics;
+  defm sra_u     : RVPBinaryAABIntrinsics;
+  defm sra8      : RVPBinaryAABIntrinsics;
+  defm sra8_u    : RVPBinaryAABIntrinsics;
+  defm sra16     : RVPBinaryAABIntrinsics;
+  defm sra16_u   : RVPBinaryAABIntrinsics;
+  defm srl8      : RVPBinaryAABIntrinsics;
+  defm srl8_u    : RVPBinaryAABIntrinsics;
+  defm srl16     : RVPBinaryAABIntrinsics;
+  defm srl16_u   : RVPBinaryAABIntrinsics;
+  defm uclip8    : RVPBinaryAABIntrinsics;
+  defm uclip16   : RVPBinaryAABIntrinsics;
+
+  class RVPBinaryABCIntrinsics
+      : Intrinsic<[llvm_any_ty],
+                  [llvm_any_ty, llvm_any_ty],
+                  [IntrNoMem]>;
+
+  multiclass RVPBinaryABCIntrinsics {
+    def "int_riscv_" # NAME   : RVPBinaryABCIntrinsics;
+  }
+
+  defm kaddh     : RVPBinaryABCIntrinsics;
+  defm ukaddh    : RVPBinaryABCIntrinsics;
+  defm ksubh     : RVPBinaryABCIntrinsics;
+  defm uksubh    : RVPBinaryABCIntrinsics;
+  defm uclip32   : RVPBinaryABCIntrinsics;
+
+  class RVPTernaryIntrinsics
+      : Intrinsic<[llvm_any_ty],
+                  [LLVMMatchType<0>, LLVMMatchType<0>, LLVMMatchType<0>],
+                  [IntrNoMem]>;
+
+  multiclass RVPTernaryIntrinsics {
+    def "int_riscv_" # NAME : RVPTernaryIntrinsics;
+  }
+
+  defm cmix    : RVPTernaryIntrinsics;
+  defm fsr     : RVPTernaryIntrinsics;
+  defm fsrw    : RVPTernaryIntrinsics;
+  defm bpick   : RVPTernaryIntrinsics;
+  defm kmmac   : RVPTernaryIntrinsics;
+  defm kmmac_u : RVPTernaryIntrinsics;
+  defm kmmsb   : RVPTernaryIntrinsics;
+  defm kmmsb_u : RVPTernaryIntrinsics;
+  defm maddr32 : RVPTernaryIntrinsics;
+  defm msubr32 : RVPTernaryIntrinsics;
+  defm pbsada  : RVPTernaryIntrinsics;
+  defm umaqa   : RVPTernaryIntrinsics;
+
+  class RVPTernaryAABBIntrinsics
+      : Intrinsic<[llvm_any_ty],
+                  [LLVMMatchType<0>, llvm_any_ty, LLVMMatchType<1>],
+                  [IntrNoMem]>;
+
+  multiclass RVPTernaryAABBIntrinsics {
+    def "int_riscv_" # NAME : RVPTernaryAABBIntrinsics;
+  }
+
+  defm kdmabb   : RVPTernaryAABBIntrinsics;
+  defm kdmabt   : RVPTernaryAABBIntrinsics;
+  defm kdmatt   : RVPTernaryAABBIntrinsics;
+  defm kmabb    : RVPTernaryAABBIntrinsics;
+  defm kmabt    : RVPTernaryAABBIntrinsics;
+  defm kmatt    : RVPTernaryAABBIntrinsics;
+  defm kmada    : RVPTernaryAABBIntrinsics;
+  defm kmaxda   : RVPTernaryAABBIntrinsics;
+  defm kmads    : RVPTernaryAABBIntrinsics;
+  defm kmadrs   : RVPTernaryAABBIntrinsics;
+  defm kmaxds   : RVPTernaryAABBIntrinsics;
+  defm kmsda    : RVPTernaryAABBIntrinsics;
+  defm kmsxda   : RVPTernaryAABBIntrinsics;
+  defm smaqa    : RVPTernaryAABBIntrinsics;
+  defm smaqa_su : RVPTernaryAABBIntrinsics;
+
+  class RVPTernaryAAABIntrinsics
+      : Intrinsic<[llvm_any_ty],
+                  [LLVMMatchType<0>, LLVMMatchType<0>, llvm_any_ty],
+                  [IntrNoMem]>;
+
+  multiclass RVPTernaryAAABIntrinsics {
+    def "int_riscv_" # NAME : RVPTernaryAAABIntrinsics;
+  }
+
+  defm insb      : RVPTernaryAAABIntrinsics;
+  defm kmmawb    : RVPTernaryAAABIntrinsics;
+  defm kmmawb_u  : RVPTernaryAAABIntrinsics;
+  defm kmmawb2   : RVPTernaryAAABIntrinsics;
+  defm kmmawb2_u : RVPTernaryAAABIntrinsics;
+  defm kmmawt    : RVPTernaryAAABIntrinsics;
+  defm kmmawt_u  : RVPTernaryAAABIntrinsics;
+  defm kmmawt2   : RVPTernaryAAABIntrinsics;
+  defm kmmawt2_u : RVPTernaryAAABIntrinsics;
+} // TargetPrefix = "riscv"

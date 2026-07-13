@@ -110,6 +110,7 @@ CGOPT(bool, DebugStrictDwarf)
 CGOPT(unsigned, AlignLoops)
 CGOPT(bool, JMCInstrument)
 CGOPT(bool, XCOFFReadOnlyPointers)
+CGOPT(bool, EnableFastIRQ)
 
 codegen::RegisterCodeGenFlags::RegisterCodeGenFlags() {
 #define CGBINDOPT(NAME)                                                        \
@@ -516,6 +517,11 @@ codegen::RegisterCodeGenFlags::RegisterCodeGenFlags() {
       cl::init(false));
   CGBINDOPT(DisableIntegratedAS);
 
+  static cl::opt<bool> EnableFastIRQ(
+      "mfast-irq", cl::desc("Enable fast interrupt"),
+      cl::init(false));
+  CGBINDOPT(EnableFastIRQ);
+
 #undef CGBINDOPT
 
   mc::RegisterMCTargetOptionsFlags();
@@ -602,6 +608,7 @@ codegen::InitTargetOptionsFromCodeGenFlags(const Triple &TheTriple) {
   Options.EABIVersion = getEABIVersion();
   Options.DebuggerTuning = getDebuggerTuningOpt();
   Options.SwiftAsyncFramePointer = getSwiftAsyncFramePointer();
+  Options.EnableFastIRQ = getEnableFastIRQ();
   return Options;
 }
 

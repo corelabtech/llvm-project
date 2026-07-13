@@ -385,6 +385,9 @@ namespace llvm {
     /// (lack) these extensions.
     unsigned VerifyArgABICompliance : 1;
 
+    /// When set to true, enables fast interrupt.
+    unsigned EnableFastIRQ : 1;
+
     /// Name of the stack usage file (i.e., .su file) if user passes
     /// -fstack-usage. If empty, it can be implied that -fstack-usage is not
     /// passed on the command line.

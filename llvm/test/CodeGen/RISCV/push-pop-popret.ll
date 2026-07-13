@@ -1665,7 +1665,7 @@ define void @alloca(i32 %n) nounwind {
 declare i32 @foo_test_irq(...)
 @var_test_irq = global [32 x i32] zeroinitializer
 
-define void @foo_with_irq() nounwind "interrupt"="user" {
+define void @foo_with_irq() nounwind "interrupt"="machine" {
 ; RV32IZCMP-LABEL: foo_with_irq:
 ; RV32IZCMP:       # %bb.0:
 ; RV32IZCMP-NEXT:    cm.push {ra}, -64
@@ -1949,7 +1949,7 @@ define void @foo_no_irq() nounwind{
   ret void
 }
 
-define void @callee_with_irq() nounwind "interrupt"="user" {
+define void @callee_with_irq() nounwind "interrupt"="machine" {
 ; RV32IZCMP-LABEL: callee_with_irq:
 ; RV32IZCMP:       # %bb.0:
 ; RV32IZCMP-NEXT:    cm.push {ra, s0-s11}, -112

@@ -72,6 +72,9 @@ def sub_gpr_odd  : SubRegIndex<32, 32> {
   let SubRegRanges = SubRegRangeByHwMode<[RV32, RV64],
                                          [SubRegRange<32, 32>, SubRegRange<64, 64>]>;
 }
+
+def gpr32_pair_lo : SubRegIndex<32>;
+def gpr32_pair_hi : SubRegIndex<32, 32>;
 } // Namespace = "RISCV"
 
 //===----------------------------------------------------------------------===//
@@ -215,6 +218,12 @@ def XLenFVT : ValueTypeByHwMode<[RV64],
                                 [f64]>;
 def XLenPairFVT : ValueTypeByHwMode<[RV32],
                                     [f64]>;
+def XVEI8VT : ValueTypeByHwMode<[RV32, RV64],
+                                [v4i8, v8i8]>;
+def XVEI16VT : ValueTypeByHwMode<[RV32,  RV64],
+                                 [v2i16, v4i16]>;
+def XVEI32VT : ValueTypeByHwMode<[RV32,  RV64],
+                                 [i32, v2i32]>;
 def XLenRI : RegInfoByHwMode<
       [RV32,              RV64],
       [RegInfo<32,32,32>, RegInfo<64,64,64>]>;
@@ -233,7 +242,7 @@ class RISCVRegisterClass<list<ValueType> regTypes, int align, dag regList>
 }
 
 class GPRRegisterClass<dag regList>
-    : RISCVRegisterClass<[XLenVT, XLenFVT, i32, i16], 32, regList> {
+    : RISCVRegisterClass<[XLenVT, XLenFVT, XVEI8VT, XVEI16VT, XVEI32VT, i32, i16], 32, regList> {
   let RegInfos = XLenRI;
 }
 
@@ -283,6 +292,9 @@ def SR07 : GPRRegisterClass<(add (sequence "X%u", 8, 9),
                                  (sequence "X%u", 18, 23))>;
 
 def GPRX1X5 :  GPRRegisterClass<(add X1, X5)>;
+
+// Dummy zero register for pairing with X0.
+def REG_PAIR_WITH_X0 : RISCVReg<0, "0">;
 
 //===----------------------------------------------------------------------===//
 // Even-Odd GPR Pairs

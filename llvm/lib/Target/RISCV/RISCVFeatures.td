@@ -1016,6 +1016,55 @@ def HasStdExtSmctrOrSsctr : Predicate<"Subtarget->hasStdExtSmctrOrSsctr()">,
                                "'Smctr' (Control Transfer Records Machine Level) or "
                                "'Ssctr' (Control Transfer Records Supervisor Level)">;
 
+// P (Packed-SIMD) extensions
+
+def FeatureStdExtZbpbo
+    : RISCVExperimentalExtension<0, 911, "'Zbpbo' ('B' & 'P' Overlay Instructions)">;
+def HasStdExtZbpbo
+    : Predicate<"Subtarget->hasStdExtZbpbo()">,
+                             AssemblerPredicate<(all_of FeatureStdExtZbpbo),
+                             "'Zbpbo' ('B' & 'P' Overlay Instructions)">;
+
+def FeatureStdExtZpn
+    : RISCVExperimentalExtension<0, 911, "'Zpn' (Normal 'P' Instructions)">;
+def HasStdExtZpn : Predicate<"Subtarget->hasStdExtZpn()">,
+                             AssemblerPredicate<(all_of FeatureStdExtZpn),
+                             "'Zpn' (Normal 'P' Instructions)">;
+
+def FeatureStdExtZpsfoperand
+    : RISCVExperimentalExtension<0, 911, "'Zpsfoperand' (64-bit operand 'P' Instructions)">;
+def HasStdExtZpsfoperand : Predicate<"Subtarget->hasStdExtZpsfoperand()">,
+                           AssemblerPredicate<(all_of FeatureStdExtZpsfoperand),
+                           "'Zpsfoperand' (64-bit operand 'P' Instructions)">;
+
+// Some instructions belong to zpsfoperand and have aliased instruction belong to zpn.
+// They should be enabled if either has been specified.
+def HasStdExtZpnOrZpsfoperand
+    : Predicate<"Subtarget->hasStdExtZpn() || Subtarget->hasStdExtZpsoperand()">,
+                AssemblerPredicate<(any_of FeatureStdExtZpn, FeatureStdExtZpsfoperand),
+                                   "'Zpn' (Normal 'P' Instructions) or "
+                                   "'Zpsfoperand' (64-bit operand 'P' Instructions)">;
+
+def HasStdExtZbbOrZbpbo
+    : Predicate<"Subtarget->hasStdExtZbb() || Subtarget->hasStdExtZbpbo()">,
+                AssemblerPredicate<(any_of FeatureStdExtZbb, FeatureStdExtZbpbo),
+                                   "'Zbb' (Basic Bit-Manipulation) or "
+                                   "'Zbpbo' ('B' & 'P' Overlay Instructions)">;
+
+def HasStdExtZbkbOrZbpbo
+    : Predicate<"Subtarget->hasStdExtZbkb() || Subtarget->hasStdExtZbpbo()">,
+                AssemblerPredicate<(any_of FeatureStdExtZbkb, FeatureStdExtZbpbo),
+                                   "'Zbkb' (Bitmanip instructions for Cryptography) or "
+                                   "'Zbpbo' ('B' & 'P' Overlay Instructions)">;
+
+def FeatureStdExtP
+    : RISCVExperimentalExtension<0, 911, "'P' (Packed-SIMD Instructions)", [FeatureStdExtZpn,
+                        FeatureStdExtZbpbo, FeatureStdExtZpsfoperand]>;
+
+def HasStdExtP : Predicate<"Subtarget->hasStdExtP()">,
+                           AssemblerPredicate<(all_of FeatureStdExtP),
+                           "'P' (Packed-SIMD Instructions)">;
+
 //===----------------------------------------------------------------------===//
 // Vendor extensions
 //===----------------------------------------------------------------------===//
@@ -1364,6 +1413,9 @@ foreach i = {1-31} in
 
 def FeatureSaveRestore : SubtargetFeature<"save-restore", "EnableSaveRestore",
                                           "true", "Enable save/restore.">;
+
+def FeatureFastIRQ : SubtargetFeature<"fast-irq", "EnableFastIRQ",
+                                      "false", "Enable fast interrupt.">;
 
 def FeatureNoTrailingSeqCstFence : SubtargetFeature<"no-trailing-seq-cst-fence",
                                           "EnableTrailingSeqCstFence",

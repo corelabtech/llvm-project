@@ -58,16 +58,29 @@ RISCVRegisterInfo::RISCVRegisterInfo(unsigned HwMode)
 const MCPhysReg *
 RISCVRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
   auto &Subtarget = MF->getSubtarget<RISCVSubtarget>();
-  if (MF->getFunction().getCallingConv() == CallingConv::GHC)
+  const Function &Func = MF->getFunction();
+  if (Func.getCallingConv() == CallingConv::GHC)
     return CSR_NoRegs_SaveList;
-  if (MF->getFunction().hasFnAttribute("interrupt")) {
-    if (Subtarget.hasStdExtD())
-      return CSR_XLEN_F64_Interrupt_SaveList;
-    if (Subtarget.hasStdExtF())
-      return Subtarget.hasStdExtE() ? CSR_XLEN_F32_Interrupt_RVE_SaveList
-                                    : CSR_XLEN_F32_Interrupt_SaveList;
-    return Subtarget.hasStdExtE() ? CSR_Interrupt_RVE_SaveList
-                                  : CSR_Interrupt_SaveList;
+  if (Func.hasFnAttribute("interrupt")) {
+    bool doAsInterrupt = true;
+    Attribute CPUAttr = Func.getFnAttribute("target-cpu");
+    if (CPUAttr.isValid()) {
+      // cl-cypress + mfast-irq: do as non-interrupt function
+      if (CPUAttr.getValueAsString().str() == "cl-cypress") {
+        if (Subtarget.hasFeature(RISCV::FeatureFastIRQ)) {
+          doAsInterrupt = false;
+        }
+      }
+    }
+    if (doAsInterrupt) {
+      if (Subtarget.hasStdExtD())
+        return CSR_XLEN_F64_Interrupt_SaveList;
+      if (Subtarget.hasStdExtF())
+        return Subtarget.hasStdExtE() ? CSR_XLEN_F32_Interrupt_RVE_SaveList
+                                      : CSR_XLEN_F32_Interrupt_SaveList;
+      return Subtarget.hasStdExtE() ? CSR_Interrupt_RVE_SaveList
+                                    : CSR_Interrupt_SaveList;
+    }
   }
 
   bool HasVectorCSR =

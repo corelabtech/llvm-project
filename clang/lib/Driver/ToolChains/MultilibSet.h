@@ -1,0 +1,7 @@
+{"rv32i", "ilp32"},
+{"rv32im", "ilp32"},
+{"rv32iac", "ilp32"},
+{"rv32imac", "ilp32"},
+{"rv32imafc", "ilp32f"},
+{"rv64imac", "lp64"},
+{"rv64imafdc", "lp64d"},

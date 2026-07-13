@@ -4606,6 +4606,14 @@ bool CompilerInvocation::ParseLangArgs(LangOptions &Opts, ArgList &Args,
     }
   }
 
+  Opts.EnableFastIRQ = false;
+  for (const Arg *A : Args.filtered(OPT_target_feature)) {
+    StringRef Name = A->getValue();
+    if (Name == "+fast-irq") {
+      Opts.EnableFastIRQ = true;
+    }
+  }
+
   return Diags.getNumErrors() == NumErrorsBefore;
 }
 

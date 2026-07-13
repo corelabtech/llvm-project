@@ -1809,9 +1809,9 @@ static void findRISCVBareMetalMultilibs(const Driver &D,
   // currently only support the set of multilibs like riscv-gnu-toolchain does.
   // TODO: support MULTILIB_REUSE
   constexpr RiscvMultilib RISCVMultilibSet[] = {
-      {"rv32i", "ilp32"},     {"rv32im", "ilp32"},     {"rv32iac", "ilp32"},
-      {"rv32imac", "ilp32"},  {"rv32imafc", "ilp32f"}, {"rv64imac", "lp64"},
-      {"rv64imafdc", "lp64d"}};
+      #include "MultilibSet.h"
+      #include "CLMultilibSet.h"
+      };
 
   std::vector<MultilibBuilder> Ms;
   for (auto Element : RISCVMultilibSet) {
@@ -2842,9 +2842,26 @@ bool Generic_GCC::GCCInstallationDetector::ScanGCCForMultilibs(
   }
 
   Multilibs = Detected.Multilibs;
-  SelectedMultilib = Detected.SelectedMultilibs.empty()
-                         ? Multilib()
-                         : Detected.SelectedMultilibs.back();
+  if (TargetTriple.isRISCV()) {
+      // Choose the best one which has the longest matched extensions
+      if (Detected.SelectedMultilibs.size() > 0) {
+          size_t Index = 0, BestIndex, MaxSize = 0;
+          for (auto Element : Detected.SelectedMultilibs) {
+              if (Element.flags().size() > MaxSize) {
+                  MaxSize = Element.flags().size();
+                  BestIndex = Index;
+              }
+              Index++;
+          }
+          SelectedMultilib = Detected.SelectedMultilibs[BestIndex];
+      } else {
+          SelectedMultilib = Multilib();
+      }
+  } else {
+      SelectedMultilib = Detected.SelectedMultilibs.empty()
+                             ? Multilib()
+                             : Detected.SelectedMultilibs.back();
+  }
   BiarchSibling = Detected.BiarchSibling;
 
   return true;

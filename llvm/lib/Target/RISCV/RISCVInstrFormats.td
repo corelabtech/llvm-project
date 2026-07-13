@@ -157,6 +157,7 @@ def OPC_JAL       : RISCVOpcode<"JAL",       0b1101111>;
 def OPC_SYSTEM    : RISCVOpcode<"SYSTEM",    0b1110011>;
 def OPC_OP_VE     : RISCVOpcode<"OP_VE",     0b1110111>;
 def OPC_CUSTOM_3  : RISCVOpcode<"CUSTOM_3",  0b1111011>;
+def OPC_OP_P      : RISCVOpcode<"OP_P",      0b1110111>;
 
 class EltDeps<bit vl, bit mask> {
   bit VL = vl;

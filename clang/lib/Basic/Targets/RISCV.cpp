@@ -238,6 +238,10 @@ void RISCVTargetInfo::getTargetDefines(const LangOptions &Opts,
     else
       Builder.defineMacro("__riscv_32e");
   }
+
+  if (Opts.EnableFastIRQ) {
+    Builder.defineMacro("__riscv_fast_irq");
+  }
 }
 
 static constexpr Builtin::Info BuiltinInfo[] = {

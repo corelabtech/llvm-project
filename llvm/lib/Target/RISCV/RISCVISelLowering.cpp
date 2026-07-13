@@ -268,6 +268,17 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &TM,
     addRegisterClass(MVT::riscv_nxv32i8x2, &RISCV::VRN2M4RegClass);
   }
 
+  if (Subtarget.hasStdExtZpn() && !Subtarget.hasVInstructions()) {
+    if (Subtarget.is64Bit()) {
+      addRegisterClass(MVT::v8i8, &RISCV::GPRRegClass);
+      addRegisterClass(MVT::v4i16, &RISCV::GPRRegClass);
+      addRegisterClass(MVT::v2i32, &RISCV::GPRRegClass);
+    } else {
+      addRegisterClass(MVT::v4i8, &RISCV::GPRRegClass);
+      addRegisterClass(MVT::v2i16, &RISCV::GPRRegClass);
+    }
+  }
+
   // Compute derived properties from the register classes.
   computeRegisterProperties(STI.getRegisterInfo());
 
@@ -388,6 +399,12 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &TM,
       setOperationAction({ISD::CTTZ, ISD::CTTZ_ZERO_UNDEF}, MVT::i32, Custom);
   } else {
     setOperationAction({ISD::CTTZ, ISD::CTPOP}, XLenVT, Expand);
+  }
+
+  if (Subtarget.hasStdExtZbpbo()) {
+    setOperationAction({ISD::SMIN, ISD::SMAX}, XLenVT, Legal);
+    setOperationAction(ISD::CTLZ, MVT::i32, Legal);
+    setOperationAction({ISD::BITREVERSE, ISD::BSWAP}, MVT::i16, Custom);
   }
 
   if (Subtarget.hasStdExtZbb() || Subtarget.hasVendorXTHeadBb() ||
@@ -1494,6 +1511,41 @@ RISCVTargetLowering::RISCVTargetLowering(const TargetMachine &TM,
     setIndexedStoreAction(ISD::POST_INC, MVT::i8, Legal);
     setIndexedStoreAction(ISD::POST_INC, MVT::i16, Legal);
     setIndexedStoreAction(ISD::POST_INC, MVT::i32, Legal);
+  }
+
+  if (Subtarget.hasStdExtZpn() && !Subtarget.hasVInstructions()) {
+    const auto addTypeForP = [&](MVT VT, MVT PromotedBitwiseVT) {
+      // Expand all builtin opcodes.
+      for (unsigned Opc = 0; Opc < ISD::BUILTIN_OP_END; ++Opc)
+        setOperationAction(Opc, VT, Expand);
+
+      setOperationAction(ISD::BITCAST, VT, Legal);
+
+      // Promote load and store operations.
+      setOperationAction(ISD::LOAD, VT, Promote);
+      AddPromotedToType(ISD::LOAD, VT, PromotedBitwiseVT);
+      setOperationAction(ISD::STORE, VT, Promote);
+      AddPromotedToType(ISD::STORE, VT, PromotedBitwiseVT);
+    };
+
+    if (Subtarget.is64Bit()) {
+      addTypeForP(MVT::v8i8, MVT::i64);
+      addTypeForP(MVT::v4i16, MVT::i64);
+      addTypeForP(MVT::v2i32, MVT::i64);
+    } else {
+      addTypeForP(MVT::v4i8, MVT::i32);
+      addTypeForP(MVT::v2i16, MVT::i32);
+    }
+
+    // Expand all truncating stores and extending loads.
+    for (MVT VT0 : MVT::vector_valuetypes()) {
+      for (MVT VT1 : MVT::vector_valuetypes()) {
+        setTruncStoreAction(VT0, VT1, Expand);
+        setLoadExtAction(ISD::SEXTLOAD, VT0, VT1, Expand);
+        setLoadExtAction(ISD::ZEXTLOAD, VT0, VT1, Expand);
+        setLoadExtAction(ISD::EXTLOAD, VT0, VT1, Expand);
+      }
+    }
   }
 
   // Function alignments.
@@ -6795,7 +6847,8 @@ SDValue RISCVTargetLowering::LowerOperation(SDValue Op,
       return lowerToScalableOp(Op, DAG);
     }
     SDLoc DL(Op);
-    assert(Subtarget.hasStdExtZbkb() && "Unexpected custom legalization");
+    assert((Subtarget.hasStdExtZbkb() || Subtarget.hasStdExtZbpbo()) &&
+           "Unexpected custom legalization");
     assert(Op.getOpcode() == ISD::BITREVERSE && "Unexpected opcode");
     // Expand bitreverse to a bswap(rev8) followed by brev8.
     SDValue BSwap = DAG.getNode(ISD::BSWAP, DL, VT, Op.getOperand(0));
@@ -12907,6 +12960,24 @@ void RISCVTargetLowering::ReplaceNodeResults(SDNode *N,
   switch (N->getOpcode()) {
   default:
     llvm_unreachable("Don't know how to custom type legalize this operation!");
+  case ISD::BSWAP: {
+    EVT VT = N->getValueType(0);
+    if (VT == MVT::i16) {
+      SDValue Input = N->getOperand(0);
+      // Extract the lower 8 bits and shift them to the upper 8 bits
+      SDValue Byte0 = DAG.getNode(ISD::AND, DL, MVT::i16, Input, DAG.getConstant(0xFF, DL, MVT::i16));
+      SDValue Byte0Shifted = DAG.getNode(ISD::SHL, DL, MVT::i16, Byte0, DAG.getConstant(8, DL, MVT::i16));
+      // Extract the upper 8 bits and shift them to the lower 8 bits
+      SDValue Byte1 = DAG.getNode(ISD::AND, DL, MVT::i16, Input, DAG.getConstant(0xFF00, DL, MVT::i16));
+      SDValue Byte1Shifted = DAG.getNode(ISD::SRL, DL, MVT::i16, Byte1, DAG.getConstant(8, DL, MVT::i16));
+      // Combine the shifted bytes
+      SDValue Swapped = DAG.getNode(ISD::OR, DL, MVT::i16, Byte0Shifted, Byte1Shifted);
+      // Replace the original node with the new result
+      Results.push_back(Swapped);
+      return;
+    }
+    break;
+  }
   case ISD::STRICT_FP_TO_SINT:
   case ISD::STRICT_FP_TO_UINT:
   case ISD::FP_TO_SINT:
@@ -20158,6 +20229,7 @@ SDValue RISCVTargetLowering::LowerFormalArguments(
     SelectionDAG &DAG, SmallVectorImpl<SDValue> &InVals) const {
 
   MachineFunction &MF = DAG.getMachineFunction();
+  const auto &STI = MF.getSubtarget<RISCVSubtarget>();
 
   switch (CallConv) {
   default:
@@ -20182,12 +20254,64 @@ SDValue RISCVTargetLowering::LowerFormalArguments(
       report_fatal_error(
         "Functions with the interrupt attribute cannot have arguments!");
 
-    StringRef Kind =
-      MF.getFunction().getFnAttribute("interrupt").getValueAsString();
+    bool support_auto_stacking = false;
+    Attribute CPUAttr = Func.getFnAttribute("target-cpu");
+    if (CPUAttr.isValid()) {
+      std::string CPU = CPUAttr.getValueAsString().str();
+      if (CPU == "cl-cypress") {
+        support_auto_stacking = true;
+      }
+    }
 
-    if (!(Kind == "user" || Kind == "supervisor" || Kind == "machine"))
-      report_fatal_error(
-        "Function interrupt attribute argument not supported!");
+    StringRef Kind = Func.getFnAttribute("interrupt").getValueAsString();
+    if (Kind == "supervisor" || Kind == "machine") {
+      if (!support_auto_stacking && STI.hasFeature(RISCV::FeatureFastIRQ)) {
+        report_fatal_error(
+          "Fast interrupt is not supported by this CPU!");
+      }
+    } else {
+        report_fatal_error(
+          "Function interrupt attribute argument not supported!");
+    }
+  }
+  if (Func.hasFnAttribute("riscv_csw") || Func.hasFnAttribute("riscv_cswl")) {
+    if (Func.hasFnAttribute("interrupt")) {
+      if (STI.hasFeature(RISCV::FeatureFastIRQ)) {
+        Func.getContext().diagnose(DiagnosticInfoUnsupported{
+          Func, "\"riscv_csw\"/\"riscv_cswl\" are not supported with fast interrupt, skip!",
+          DiagnosticLocation(), DS_Warning});
+      }
+    } else {
+      Func.getContext().diagnose(DiagnosticInfoUnsupported{
+          Func, "\"riscv_csw\"/\"riscv_cswl\" are only supported in interrupt handler, skip!",
+          DiagnosticLocation(), DS_Warning});
+    }
+  }
+  if (Func.hasFnAttribute("riscv_disable_csr_backup")) {
+    if (Func.hasFnAttribute("interrupt")) {
+      if (STI.hasFeature(RISCV::FeatureFastIRQ)) {
+        Func.getContext().diagnose(DiagnosticInfoUnsupported{
+          Func, "riscv_disable_csr_backup is not supported with fast interrupt, skip!",
+          DiagnosticLocation(), DS_Warning});
+      }
+    } else {
+      Func.getContext().diagnose(DiagnosticInfoUnsupported{
+          Func, "riscv_disable_csr_backup is only supported in interrupt handler, skip!",
+          DiagnosticLocation(), DS_Warning});
+    }
+  }
+  if (Func.hasFnAttribute("riscv_skip_mie")) {
+    if (Func.hasFnAttribute("interrupt")) {
+      if (STI.hasFeature(RISCV::FeatureFastIRQ)) {
+        Func.getContext().diagnose(DiagnosticInfoUnsupported{
+          Func, "riscv_skip_mie is not supported with fast interrupt, skip!",
+          DiagnosticLocation(), DS_Warning});
+      }
+    } else {
+      Func.getContext().diagnose(DiagnosticInfoUnsupported{
+          Func, "riscv_skip_mie is only supported in interrupt handler, skip!",
+          DiagnosticLocation(), DS_Warning});
+    }
   }
 
   EVT PtrVT = getPointerTy(DAG.getDataLayout());
@@ -20810,10 +20934,7 @@ RISCVTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
       report_fatal_error(
           "Functions with the interrupt attribute must have void return type!");
 
-    MachineFunction &MF = DAG.getMachineFunction();
-    StringRef Kind =
-      MF.getFunction().getFnAttribute("interrupt").getValueAsString();
-
+    StringRef Kind = Func.getFnAttribute("interrupt").getValueAsString();
     if (Kind == "supervisor")
       RetOpc = RISCVISD::SRET_GLUE;
     else
@@ -22800,6 +22921,24 @@ bool RISCVTargetLowering::shouldFoldSelectWithSingleBitTest(
 
 unsigned RISCVTargetLowering::getMinimumJumpTableEntries() const {
   return Subtarget.getMinimumJumpTableEntries();
+}
+
+bool RISCVTargetLowering::canMergeStoresTo(unsigned AddressSpace, EVT MemVT,
+                                           const MachineFunction &MF) const {
+  if (Subtarget.hasStdExtZpn()) {
+    // Do not merge these formats into i32/i64, because i32/i64 have stricter
+    // memory alignment requirement.
+    if (Subtarget.is64Bit()) {
+      if (MemVT == MVT::v8i8 || MemVT == MVT::v4i16 || MemVT == MVT::v2i32) {
+        return false;
+      }
+    } else {
+      if (MemVT == MVT::v4i8 || MemVT == MVT::v2i16) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 SDValue RISCVTargetLowering::expandIndirectJTBranch(const SDLoc &dl,

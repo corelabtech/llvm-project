@@ -1447,34 +1447,6 @@ csrrs t1, tcontrol, zero
 # uimm12
 csrrs t2, 0x7A5, zero
 
-# mcontext
-# name
-# CHECK-INST: csrrs t1, mcontext, zero
-# CHECK-ENC: encoding: [0x73,0x23,0x80,0x7a]
-# CHECK-INST-ALIAS: csrr t1, mcontext
-# uimm12
-# CHECK-INST: csrrs t2, mcontext, zero
-# CHECK-ENC: encoding: [0xf3,0x23,0x80,0x7a]
-# CHECK-INST-ALIAS: csrr t2, mcontext
-# name
-csrrs t1, mcontext, zero
-# uimm12
-csrrs t2, 0x7A8, zero
-
-# mscontext
-# name
-# CHECK-INST: csrrs t1, mscontext, zero
-# CHECK-ENC: encoding: [0x73,0x23,0xa0,0x7a]
-# CHECK-INST-ALIAS: csrr t1, mscontext
-# uimm12
-# CHECK-INST: csrrs t2, mscontext, zero
-# CHECK-ENC: encoding: [0xf3,0x23,0xa0,0x7a]
-# CHECK-INST-ALIAS: csrr t2, mscontext
-# name
-csrrs t1, mscontext, zero
-# uimm12
-csrrs t2, 0x7AA, zero
-
 #######################
 # Debug Mode Registers
 ########################

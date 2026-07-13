@@ -4972,3 +4972,27 @@ def NoTrivialAutoVarInit: InheritableAttr {
   let Documentation = [NoTrivialAutoVarInitDocs];
   let SimpleHandler = 1;
 }
+
+def RISCVCSW : InheritableAttr, TargetSpecificAttr<TargetRISCV> {
+  let Spellings = [GCC<"riscv_csw">];
+  let Subjects = SubjectList<[Function]>;
+  let Documentation = [Undocumented];
+}
+
+def RISCVCSWL : InheritableAttr, TargetSpecificAttr<TargetRISCV> {
+  let Spellings = [GCC<"riscv_cswl">];
+  let Subjects = SubjectList<[Function]>;
+  let Documentation = [Undocumented];
+}
+
+def RISCVDisableCSRBackup : InheritableAttr, TargetSpecificAttr<TargetRISCV> {
+  let Spellings = [GCC<"riscv_disable_csr_backup">];
+  let Subjects = SubjectList<[Function]>;
+  let Documentation = [Undocumented];
+}
+
+def RISCVSkipMIE : InheritableAttr, TargetSpecificAttr<TargetRISCV> {
+  let Spellings = [GCC<"riscv_skip_mie">];
+  let Subjects = SubjectList<[Function]>;
+  let Documentation = [Undocumented];
+}

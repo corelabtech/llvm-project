@@ -81,6 +81,11 @@ private:
   /// Does it probe the stack for a dynamic allocation?
   bool HasDynamicAllocation = false;
 
+  int FcsrFI = 0;
+  int MepcFI = 0;
+  int McauseFI = 0;
+  int MexinfoFI = 0;
+
 public:
   RISCVMachineFunctionInfo(const Function &F, const RISCVSubtarget *STI);
 
@@ -165,6 +170,15 @@ public:
 
   bool hasDynamicAllocation() const { return HasDynamicAllocation; }
   void setDynamicAllocation() { HasDynamicAllocation = true; }
+
+  void setFcsrFI(int FI) { FcsrFI = FI;}
+  int getFcsrFI() const { return FcsrFI; }
+  void setMepcFI(int FI) { MepcFI = FI;}
+  int getMepcFI() const { return MepcFI; }
+  void setMcauseFI(int FI) { McauseFI = FI;}
+  int getMcauseFI() const { return McauseFI; }
+  void setMexinfoFI(int FI) { MexinfoFI = FI;}
+  int getMexinfoFI() const { return MexinfoFI; }
 };
 
 } // end namespace llvm

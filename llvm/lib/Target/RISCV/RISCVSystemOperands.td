@@ -136,8 +136,6 @@ def : SysReg<"srmcfg", 0x181>;
 // Debug/Trace Registers
 //===----------------------------------------------------------------------===//
 
-def : SysReg<"scontext", 0x5A8>;
-
 //===----------------------------------------------------------------------===//
 // Supervisor Count Overflow (defined in Sscofpmf)
 //===----------------------------------------------------------------------===//
@@ -322,7 +320,7 @@ def : SysReg<"tdata3", 0x7A3>;
 def : SysReg<"tinfo", 0x7A4>;
 def : SysReg<"tcontrol", 0x7A5>;
 def : SysReg<"mcontext", 0x7A8>;
-def : SysReg<"mscontext", 0x7AA>;
+def : SysReg<"scontext", 0x7AA>; // riscv debug 0.13
 
 //===----------------------------------------------------------------------===//
 // Debug Mode Registers
@@ -341,7 +339,7 @@ def : SysReg<"dscratch1", 0x7B3>;
 // User Vector CSRs
 //===----------------------------------------------------------------------===//
 def : SysReg<"vstart", 0x008>;
-def : SysReg<"vxsat", 0x009>;
+def SysRegVXSAT : SysReg<"vxsat", 0x009>;
 def SysRegVXRM : SysReg<"vxrm", 0x00A>;
 def : SysReg<"vcsr", 0x00F>;
 def SysRegVL : SysReg<"vl", 0xC20>;
@@ -464,3 +462,34 @@ def : SysReg<"sctrstatus", 0x14f>;
 def : SysReg<"sctrdepth", 0x15f>;
 def : SysReg<"vsctrctl", 0x24e>;
 def : SysReg<"mctrctl", 0x34e>;
+
+//===-----------------------------------------------
+// CoreLab custom CSRs
+//===-----------------------------------------------
+
+def : SysReg<"mtvt", 0x307>;
+def : SysReg<"mnxti", 0x345>;
+def : SysReg<"mintthresh", 0x347>;
+def : SysReg<"mscratchcsw", 0x348>;
+def : SysReg<"mscratchcswl", 0x349>;
+def : SysReg<"micache", 0x7C0>;
+def : SysReg<"mdcache", 0x7C1>;
+def : SysReg<"mitcmcr", 0x7C5>;
+def : SysReg<"mdtcmcr", 0x7C6>;
+def : SysReg<"mhcr", 0x7C7>;
+def : SysReg<"mfpstatus", 0x7C8>;
+def : SysReg<"mpfpsp", 0x7C9>;
+def : SysReg<"mexinfo", 0x7CA>;
+def : SysReg<"mecc_code", 0x7CB>;
+def : SysReg<"mecc_ctl", 0x7CC>;
+def : SysReg<"mecc_guard", 0x7CD>;
+def : SysReg<"mecc_status1", 0x7CE>;
+def : SysReg<"mnmimepc", 0xBC0>;
+def : SysReg<"mnmimcause", 0xBC1>;
+def : SysReg<"mnmimexstatus", 0xBC2>;
+def : SysReg<"msleepmode", 0xBC3>;
+def : SysReg<"mexstatus", 0xBC4>;
+def : SysReg<"mwarmrst", 0xBC5>;
+def : SysReg<"mnmie", 0xBC6>;
+def : SysReg<"mintstatus", 0xFB1>;
+def : SysReg<"mrstcause", 0xFC0>;

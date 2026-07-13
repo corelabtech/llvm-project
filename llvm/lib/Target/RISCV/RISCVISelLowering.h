@@ -807,6 +807,9 @@ public:
       MachineMemOperand::Flags Flags = MachineMemOperand::MONone,
       unsigned *Fast = nullptr) const override;
 
+  bool canMergeStoresTo(unsigned AddressSpace, EVT MemVT,
+                        const MachineFunction &MF) const override;
+
   EVT getOptimalMemOpType(const MemOp &Op,
                           const AttributeList &FuncAttributes) const override;
 

@@ -60,6 +60,15 @@ __riscv_cpop_64(uint64_t __x) {
 #endif
 #endif // defined(__riscv_zbb)
 
+#if defined(__riscv_zbb) || defined(__riscv_zbpbo)
+#if __riscv_xlen == 32
+static __inline__ unsigned __attribute__((__always_inline__, __nodebug__))
+__rv_clz(uint32_t __x) {
+  return __builtin_riscv_ctz_32(__x);
+}
+#endif
+#endif
+
 #if defined(__riscv_zbb) || defined(__riscv_zbkb)
 static __inline__ uint32_t __attribute__((__always_inline__, __nodebug__))
 __riscv_rev8_32(uint32_t __x) {

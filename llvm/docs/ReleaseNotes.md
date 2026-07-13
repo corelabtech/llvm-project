@@ -299,6 +299,7 @@ Changes to the RISC-V Backend
   means Zve32x and Zve32f will also require Zvl64b. The prior support was
   largely untested.
 * The `Zvbc32e` and `Zvkgs` extensions are now supported experimentally.
+* The `Zpn` and `Zbpbo` extensions are now supported experimentally.
 * Added `Smctr`, `Ssctr` and `Svvptc` extensions.
 * `-mcpu=syntacore-scr7` was added.
 * `-mcpu=tt-ascalon-d8` was added.

@@ -200,6 +200,9 @@
 // CHECK-NOT: __riscv_zvfbfmin {{.*$}}
 // CHECK-NOT: __riscv_zvfbfwma {{.*$}}
 // CHECK-NOT: __riscv_zvkgs {{.*$}}
+// CHECK-NOT: __riscv_p
+// CHECK-NOT: __riscv_zbpbo
+// CHECK-NOT: __riscv_zpn
 
 // RUN: %clang --target=riscv32-unknown-linux-gnu \
 // RUN:   -march=rv32ia -E -dM %s \
@@ -1852,3 +1855,31 @@
 // RUN: %clang --target=riscv64-unknown-linux-gnu -mcpu=sifive-p450 -E -dM %s \
 // RUN:  -o - | FileCheck %s --check-prefix=CHECK-MISALIGNED-FAST
 // CHECK-MISALIGNED-FAST: __riscv_misaligned_fast 1
+
+// RUN: %clang -target riscv32-unknown-linux-gnu -menable-experimental-extensions \
+// RUN: -march=rv32ip0p911 -x c -E -dM %s \
+// RUN: -o - | FileCheck --check-prefix=CHECK-P-EXT %s
+// RUN: %clang -target riscv64-unknown-linux-gnu -menable-experimental-extensions \
+// RUN: -march=rv64ip0p911 -x c -E -dM %s \
+// RUN: -o - | FileCheck --check-prefix=CHECK-P-EXT %s
+// CHECK-P-EXT: __riscv_p 911000{{$}}
+// CHECK-P-EXT: __riscv_zbpbo 911000{{$}}
+// CHECK-P-EXT: __riscv_zpn 911000{{$}}
+
+// RUN: %clang -target riscv32-unknown-linux-gnu -menable-experimental-extensions \
+// RUN: -march=rv32izbpbo0p911 -x c -E -dM %s \
+// RUN: -o - | FileCheck --check-prefix=CHECK-ZBPBO-EXT %s
+// RUN: %clang -target riscv64-unknown-linux-gnu -menable-experimental-extensions \
+// RUN: -march=rv64izbpbo0p911 -x c -E -dM %s \
+// RUN: -o - | FileCheck --check-prefix=CHECK-ZBPBO-EXT %s
+// CHECK-ZBPBO-NOT: __riscv_p
+// CHECK-ZBPBO-EXT: __riscv_zbpbo 911000{{$}}
+
+// RUN: %clang -target riscv32-unknown-linux-gnu -menable-experimental-extensions \
+// RUN: -march=rv32izpn0p911 -x c -E -dM %s \
+// RUN: -o - | FileCheck --check-prefix=CHECK-ZPN-EXT %s
+// RUN: %clang -target riscv64-unknown-linux-gnu -menable-experimental-extensions \
+// RUN: -march=rv64izpn0p911 -x c -E -dM %s \
+// RUN: -o - | FileCheck --check-prefix=CHECK-ZPN-EXT %s
+// CHECK-ZPN-NOT: __riscv_p
+// CHECK-ZPN-EXT: __riscv_zpn 911000{{$}}

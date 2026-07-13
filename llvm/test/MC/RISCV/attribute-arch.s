@@ -473,3 +473,12 @@
 
 .attribute arch, "rv32i_sdtrig1p0"
 # CHECK: attribute      5, "rv32i2p1_sdtrig1p0"
+
+.attribute arch, "rv32ip0p911"
+# CHECK: attribute      5, "rv32i2p1_p0p911_zbpbo0p911_zpn0p911_zpsfoperand0p911"
+
+.attribute arch, "rv32izbpbo0p911"
+# CHECK: attribute      5, "rv32i2p1_zbpbo0p911"
+
+.attribute arch, "rv32izpn0p911"
+# CHECK: attribute      5, "rv32i2p1_zpn0p911"

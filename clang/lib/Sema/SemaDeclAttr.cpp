@@ -6536,6 +6536,56 @@ static bool MustDelayAttributeArguments(const ParsedAttr &AL) {
   return false;
 }
 
+static void handleRISCVCSWAttr(Sema &S, Decl *D, const ParsedAttr &AL, bool level) {
+  if (!isa<FunctionDecl>(D)) {
+    S.Diag(AL.getLoc(), diag::err_attribute_wrong_decl_type) << AL << ExpectedFunction;
+    return;
+  }
+  switch (S.Context.getTargetInfo().getTriple().getArch()) {
+  case llvm::Triple::riscv32:
+  case llvm::Triple::riscv64:
+    if (!level) {
+      D->addAttr(::new (S.Context) RISCVCSWAttr(S.Context, AL));
+    } else {
+      D->addAttr(::new (S.Context) RISCVCSWLAttr(S.Context, AL));
+    }
+    break;
+  default:
+    break;
+  }
+}
+
+static void handleRISCVDisableCSRBackupAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
+  if (!isa<FunctionDecl>(D)) {
+    S.Diag(AL.getLoc(), diag::err_attribute_wrong_decl_type) << AL << ExpectedFunction;
+    return;
+  }
+  switch (S.Context.getTargetInfo().getTriple().getArch()) {
+  case llvm::Triple::riscv32:
+  case llvm::Triple::riscv64:
+    D->addAttr(::new (S.Context) RISCVDisableCSRBackupAttr(S.Context, AL));
+    break;
+  default:
+    break;
+  }
+}
+
+static void handleRISCVSkipMIEAttr(Sema &S, Decl *D, const ParsedAttr &AL) {
+  if (!isa<FunctionDecl>(D)) {
+    S.Diag(AL.getLoc(), diag::err_attribute_wrong_decl_type) << AL << ExpectedFunction;
+    return;
+  }
+  switch (S.Context.getTargetInfo().getTriple().getArch()) {
+  case llvm::Triple::riscv32:
+  case llvm::Triple::riscv64:
+    D->addAttr(::new (S.Context) RISCVSkipMIEAttr(S.Context, AL));
+    break;
+  default:
+    break;
+  }
+}
+
+
 /// ProcessDeclAttribute - Apply the specific attribute to the specified decl if
 /// the attribute applies to decls.  If the attribute is a type attribute, just
 /// silently ignore it if a GNU attribute.
@@ -7409,6 +7459,22 @@ ProcessDeclAttribute(Sema &S, Scope *scope, Decl *D, const ParsedAttr &AL,
 
   case ParsedAttr::AT_VTablePointerAuthentication:
     handleVTablePointerAuthentication(S, D, AL);
+    break;
+
+  case ParsedAttr::AT_RISCVCSW:
+    handleRISCVCSWAttr(S, D, AL, false);
+    break;
+
+  case ParsedAttr::AT_RISCVCSWL:
+    handleRISCVCSWAttr(S, D, AL, true);
+    break;
+
+  case ParsedAttr::AT_RISCVDisableCSRBackup:
+    handleRISCVDisableCSRBackupAttr(S, D, AL);
+    break;
+
+  case ParsedAttr::AT_RISCVSkipMIE:
+    handleRISCVSkipMIEAttr(S, D, AL);
     break;
   }
 }
